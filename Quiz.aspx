@@ -17,7 +17,11 @@
         .question-box label { display: block; padding: 10px 14px; border-radius: 8px; margin-bottom: 8px; cursor: pointer; background: white; border: 1px solid #ddd; }
         .question-box label:hover { background: #eef5ff; border-color: #337ab7; }
         .quiz-actions { margin-top: 25px; }
-        .btn { border-radius: 8px; }
+        .btn { border-radius: 8px; margin-bottom: 5px; }
+
+        @media (max-width: 900px) {
+            .quiz-card { margin: 20px; padding: 22px; }
+        }
     </style>
 </head>
 <body>
@@ -77,22 +81,36 @@
         </div>
 
         <div class="quiz-actions">
-            <asp:Button ID="btnSubmitQuiz" runat="server" Text="Submit Quiz"
-                CssClass="btn btn-primary" OnClick="btnSubmitQuiz_Click" />
+    <asp:Button ID="btnSubmitQuiz" runat="server" Text="Submit Quiz"
+        CssClass="btn btn-primary" OnClick="btnSubmitQuiz_Click" />
 
-            <a href="Default.aspx" class="btn btn-default">Back Home</a>
-        </div>
+    <a href="Admin/Dashboard.aspx" class="btn btn-default">Back to Admin Dashboard</a>
+    <a href="Courses.aspx" class="btn btn-default">Back to Courses</a>
+    <a href="Default.aspx" class="btn btn-default">Back Home</a>
+</div>
 
         <script runat="server">
             protected void btnSubmitQuiz_Click(object sender, EventArgs e)
             {
+                if (!Page.IsValid)
+                {
+                    return;
+                }
+
                 int score = 0;
 
-                score += int.Parse(q1.SelectedValue);
-                score += int.Parse(q2.SelectedValue);
-                score += int.Parse(q3.SelectedValue);
+                score += GetAnswerValue(q1.SelectedValue);
+                score += GetAnswerValue(q2.SelectedValue);
+                score += GetAnswerValue(q3.SelectedValue);
 
                 Response.Redirect("QuizResult.aspx?score=" + score);
+            }
+
+            private int GetAnswerValue(string selectedValue)
+            {
+                int value = 0;
+                int.TryParse(selectedValue, out value);
+                return value;
             }
         </script>
     </div>

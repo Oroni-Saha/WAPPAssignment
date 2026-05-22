@@ -1,5 +1,21 @@
 <%@ Page Language="C#" AutoEventWireup="true" %>
 
+<script runat="server">
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        bool isLoggedIn =
+            Session["UserID"] != null ||
+            Session["Username"] != null ||
+            Session["AdminID"] != null ||
+            Session["Email"] != null;
+
+       //if (!isLoggedIn)
+        //{
+          //  Response.Redirect("~/Login.aspx");
+        //}
+    }
+</script>
+
 <!DOCTYPE html>
 <html>
 <head runat="server">
@@ -10,7 +26,7 @@
     <style>
         body { background: #f5f7fb; font-family: Arial, sans-serif; }
         .admin-wrapper { max-width: 1150px; margin: 40px auto; display: flex; gap: 25px; }
-        .sidebar { width: 230px; background: #1f2937; color: white; border-radius: 16px; padding: 25px; }
+        .sidebar { width: 230px; background: #1f2937; color: white; border-radius: 16px; padding: 25px; height: fit-content; }
         .sidebar h3 { margin-top: 0; margin-bottom: 25px; font-weight: bold; }
         .sidebar a { display: block; color: #d1d5db; padding: 12px; border-radius: 8px; text-decoration: none; margin-bottom: 8px; }
         .sidebar a:hover, .sidebar .active { background: #374151; color: white; }
@@ -18,9 +34,21 @@
         .page-card { background: white; border-radius: 16px; padding: 30px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); }
         .section-box { background: #fbfdff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 22px; margin-top: 25px; }
         .form-control { border-radius: 8px; }
-        .btn { border-radius: 8px; }
+        .btn { border-radius: 8px; margin-bottom: 5px; }
         table { background: white; }
+
+        @media (max-width: 900px) {
+            .admin-wrapper { flex-direction: column; margin: 20px; }
+            .sidebar { width: auto; }
+        }
     </style>
+
+    <script>
+        function showPendingMessage(actionName) {
+            alert(actionName + " will be connected after database integration.");
+            return false;
+        }
+    </script>
 </head>
 <body>
     <form id="form1" runat="server">
@@ -30,6 +58,7 @@
                 <a href="Dashboard.aspx">Dashboard</a>
                 <a href="ManageCourses.aspx" class="active">Course Management</a>
                 <a href="ManageQuizzes.aspx">Quiz Management</a>
+                <a href="../Quiz.aspx">Preview Quiz</a>
                 <a href="../Default.aspx">Main Website</a>
             </div>
 
@@ -87,7 +116,8 @@
                             </asp:DropDownList>
                         </div>
 
-                        <asp:Button ID="btnAddCourse" runat="server" Text="Add Course" CssClass="btn btn-primary" />
+                        <asp:Button ID="btnAddCourse" runat="server" Text="Add Course" CssClass="btn btn-primary"
+                            OnClientClick="return showPendingMessage('Add Course');" />
                         <a href="Dashboard.aspx" class="btn btn-default">Back to Admin Dashboard</a>
                     </div>
 
@@ -111,8 +141,8 @@
                                     <td>Beginner</td>
                                     <td><span class="label label-success">Published</span></td>
                                     <td>
-                                        <button type="button" class="btn btn-warning btn-sm">Edit</button>
-                                        <button type="button" class="btn btn-danger btn-sm">Delete</button>
+                                        <button type="button" class="btn btn-warning btn-sm" onclick="return showPendingMessage('Edit Course');">Edit</button>
+                                        <button type="button" class="btn btn-danger btn-sm" onclick="return showPendingMessage('Delete Course');">Delete</button>
                                     </td>
                                 </tr>
                                 <tr>
@@ -121,8 +151,8 @@
                                     <td>Beginner</td>
                                     <td><span class="label label-success">Published</span></td>
                                     <td>
-                                        <button type="button" class="btn btn-warning btn-sm">Edit</button>
-                                        <button type="button" class="btn btn-danger btn-sm">Delete</button>
+                                        <button type="button" class="btn btn-warning btn-sm" onclick="return showPendingMessage('Edit Course');">Edit</button>
+                                        <button type="button" class="btn btn-danger btn-sm" onclick="return showPendingMessage('Delete Course');">Delete</button>
                                     </td>
                                 </tr>
                                 <tr>
@@ -131,8 +161,8 @@
                                     <td>Intermediate</td>
                                     <td><span class="label label-default">Draft</span></td>
                                     <td>
-                                        <button type="button" class="btn btn-warning btn-sm">Edit</button>
-                                        <button type="button" class="btn btn-danger btn-sm">Delete</button>
+                                        <button type="button" class="btn btn-warning btn-sm" onclick="return showPendingMessage('Edit Course');">Edit</button>
+                                        <button type="button" class="btn btn-danger btn-sm" onclick="return showPendingMessage('Delete Course');">Delete</button>
                                     </td>
                                 </tr>
                             </tbody>

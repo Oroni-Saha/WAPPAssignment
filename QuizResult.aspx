@@ -16,21 +16,28 @@
         .score-label { font-size: 24px; font-weight: bold; color: #337ab7; display: block; margin-bottom: 15px; }
         .status-label { font-size: 34px; font-weight: 800; display: block; }
         .btn { border-radius: 8px; margin: 5px; }
+
+        @media (max-width: 900px) {
+            .result-card { margin: 20px; padding: 25px; }
+            .status-label { font-size: 28px; }
+        }
     </style>
 </head>
 <body>
 <form id="form1" runat="server">
     <div class="result-card">
         <h2>Quiz Result</h2>
-        <p class="module-path">HTML Fundamentals → Module Quiz</p>
+       <p class="module-path">HTML Fundamentals - Module Quiz</p>
 
         <div class="score-box">
             <asp:Label ID="lblScore" runat="server" CssClass="score-label"></asp:Label>
             <asp:Label ID="lblStatus" runat="server" CssClass="status-label"></asp:Label>
         </div>
 
-        <a href="Quiz.aspx" class="btn btn-primary">Retake Quiz</a>
-        <a href="Default.aspx" class="btn btn-default">Back Home</a>
+       <a href="Quiz.aspx" class="btn btn-primary">Retake Quiz</a>
+<a href="Admin/Dashboard.aspx" class="btn btn-default">Back to Admin Dashboard</a>
+<a href="Courses.aspx" class="btn btn-default">Back to Courses</a>
+<a href="Default.aspx" class="btn btn-default">Back Home</a>
 
         <script runat="server">
             protected void Page_Load(object sender, EventArgs e)
@@ -40,6 +47,11 @@
                 if (Request.QueryString["score"] != null)
                 {
                     int.TryParse(Request.QueryString["score"], out score);
+                }
+
+                if (score < 0 || score > 3)
+                {
+                    score = 0;
                 }
 
                 lblScore.Text = "Your Score: " + score + " / 3";
