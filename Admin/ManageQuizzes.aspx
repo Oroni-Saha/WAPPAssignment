@@ -1,19 +1,159 @@
 <%@ Page Language="C#" AutoEventWireup="true" %>
+<%@ Import Namespace="System.Configuration" %>
+<%@ Import Namespace="System.Data" %>
+<%@ Import Namespace="System.Data.SqlClient" %>
+<%@ Import Namespace="System.Web.UI.WebControls" %>
 
 <script runat="server">
+
+    string connStr = ConfigurationManager.ConnectionStrings["CodeMasterConnection"].ConnectionString;
+
     protected void Page_Load(object sender, EventArgs e)
     {
-        bool isLoggedIn =
-            Session["UserID"] != null ||
-            Session["Username"] != null ||
-            Session["AdminID"] != null ||
-            Session["Email"] != null;
+        if (Session["Role"] == null || Session["Role"].ToString() != "Admin")
+        {
+            Response.Redirect("~/Login.aspx");
+        }
 
-      //  if (!isLoggedIn)
-        //{
-          //  Response.Redirect("~/Login.aspx");
-        //}
+        if (!IsPostBack)
+        {
+            LoadCourses();
+            LoadQuestions();
+        }
     }
+
+    private void LoadCourses()
+    {
+        using (SqlConnection con = new SqlConnection(connStr))
+        {
+            string query = "SELECT CourseID, Title FROM Courses";
+            SqlCommand cmd = new SqlCommand(query, con);
+
+            con.Open();
+
+            ddlCourse.DataSource = cmd.ExecuteReader();
+            ddlCourse.DataTextField = "Title";
+            ddlCourse.DataValueField = "CourseID";
+            ddlCourse.DataBind();
+
+            ddlCourse.Items.Insert(0, new ListItem("-- Select Course --", ""));
+        }
+    }
+
+    protected void btnSaveQuestion_Click(object sender, EventArgs e)
+    {
+        if (ddlCourse.SelectedValue == "" || txtQuestion.Text.Trim() == "" ||
+            txtOptionA.Text.Trim() == "" || txtOptionB.Text.Trim() == "" ||
+            txtOptionC.Text.Trim() == "" || txtOptionD.Text.Trim() == "" ||
+            ddlCorrectAnswer.SelectedValue == "")
+        {
+            lblMessage.Text = "Please fill all fields.";
+            lblMessage.ForeColor = System.Drawing.Color.Red;
+            return;
+        }
+
+        int quizID = 0;
+
+        using (SqlConnection con = new SqlConnection(connStr))
+        {
+            con.Open();
+
+            string checkQuiz = "SELECT QuizID FROM Quizzes WHERE CourseID=@CourseID";
+
+            SqlCommand checkCmd = new SqlCommand(checkQuiz, con);
+            checkCmd.Parameters.AddWithValue("@CourseID", ddlCourse.SelectedValue);
+
+            object result = checkCmd.ExecuteScalar();
+
+            if (result != null)
+            {
+                quizID = Convert.ToInt32(result);
+            }
+            else
+            {
+                string insertQuiz = "INSERT INTO Quizzes (CourseID, PassingScore, DurationMinutes) OUTPUT INSERTED.QuizID VALUES (@CourseID, @PassingScore, @Duration)";
+
+                SqlCommand quizCmd = new SqlCommand(insertQuiz, con);
+                quizCmd.Parameters.AddWithValue("@CourseID", ddlCourse.SelectedValue);
+                quizCmd.Parameters.AddWithValue("@PassingScore", txtPassingScore.Text.Trim());
+                quizCmd.Parameters.AddWithValue("@Duration", txtDuration.Text.Trim());
+
+                quizID = Convert.ToInt32(quizCmd.ExecuteScalar());
+            }
+
+            string insertQuestion = @"INSERT INTO Questions 
+                (QuizID, QuestionText, OptionA, OptionB, OptionC, OptionD, CorrectAnswer, Points)
+                VALUES 
+                (@QuizID, @QuestionText, @OptionA, @OptionB, @OptionC, @OptionD, @CorrectAnswer, 1)";
+
+            SqlCommand questionCmd = new SqlCommand(insertQuestion, con);
+
+            questionCmd.Parameters.AddWithValue("@QuizID", quizID);
+            questionCmd.Parameters.AddWithValue("@QuestionText", txtQuestion.Text.Trim());
+            questionCmd.Parameters.AddWithValue("@OptionA", txtOptionA.Text.Trim());
+            questionCmd.Parameters.AddWithValue("@OptionB", txtOptionB.Text.Trim());
+            questionCmd.Parameters.AddWithValue("@OptionC", txtOptionC.Text.Trim());
+            questionCmd.Parameters.AddWithValue("@OptionD", txtOptionD.Text.Trim());
+            questionCmd.Parameters.AddWithValue("@CorrectAnswer", ddlCorrectAnswer.SelectedValue);
+
+            questionCmd.ExecuteNonQuery();
+        }
+
+        lblMessage.Text = "Question saved successfully!";
+        lblMessage.ForeColor = System.Drawing.Color.Green;
+
+        txtQuestion.Text = "";
+        txtOptionA.Text = "";
+        txtOptionB.Text = "";
+        txtOptionC.Text = "";
+        txtOptionD.Text = "";
+        ddlCorrectAnswer.SelectedIndex = 0;
+
+        LoadQuestions();
+    }
+
+    private void LoadQuestions()
+    {
+        using (SqlConnection con = new SqlConnection(connStr))
+        {
+            string query = @"SELECT 
+                                q.QuestionID,
+                                c.Title AS CourseTitle,
+                                q.QuestionText,
+                                q.CorrectAnswer,
+                                q.Points
+                            FROM Questions q
+                            INNER JOIN Quizzes z ON q.QuizID = z.QuizID
+                            INNER JOIN Courses c ON z.CourseID = c.CourseID";
+
+            SqlDataAdapter da = new SqlDataAdapter(query, con);
+            DataTable dt = new DataTable();
+
+            da.Fill(dt);
+
+            gvQuestions.DataSource = dt;
+            gvQuestions.DataBind();
+        }
+    }
+
+    protected void gvQuestions_RowDeleting(object sender, GridViewDeleteEventArgs e)
+    {
+        int id = Convert.ToInt32(gvQuestions.DataKeys[e.RowIndex].Value);
+
+        using (SqlConnection con = new SqlConnection(connStr))
+        {
+            string query = "DELETE FROM Questions WHERE QuestionID=@ID";
+
+            SqlCommand cmd = new SqlCommand(query, con);
+            cmd.Parameters.AddWithValue("@ID", id);
+
+            con.Open();
+            cmd.ExecuteNonQuery();
+        }
+
+        LoadQuestions();
+    }
+
 </script>
 
 <!DOCTYPE html>
@@ -42,197 +182,126 @@
             .sidebar { width: auto; }
         }
     </style>
-
-    <script>
-        function showPendingMessage(actionName) {
-            alert(actionName + " will be connected after database integration.");
-            return false;
-        }
-    </script>
 </head>
+
 <body>
-    <form id="form1" runat="server">
-        <div class="admin-wrapper">
-            <div class="sidebar">
-                <h3>CodeMaster</h3>
-                <a href="Dashboard.aspx">Dashboard</a>
-                <a href="ManageCourses.aspx">Course Management</a>
-                <a href="ManageQuizzes.aspx" class="active">Quiz Management</a>
-                <a href="../Quiz.aspx">Preview Quiz</a>
-                <a href="../Default.aspx">Main Website</a>
-            </div>
+<form id="form1" runat="server">
 
-            <div class="main-content">
-                <div class="page-card">
-                    <h2>Manage Quizzes</h2>
-                    <p>Create and manage assessment questions for programming courses.</p>
+    <div class="admin-wrapper">
 
-                    <div class="section-box">
-                        <h3>Quiz Creation</h3>
+        <div class="sidebar">
+            <h3>CodeMaster</h3>
+            <a href="Dashboard.aspx">Dashboard</a>
+            <a href="ManageCourses.aspx">Course Management</a>
+            <a href="ManageQuizzes.aspx" class="active">Quiz Management</a>
+            <a href="../Quiz.aspx">Preview Quiz</a>
+            <a href="../Default.aspx">Main Website</a>
+        </div>
 
-                        <div class="form-group">
-                            <label>Course</label>
-                            <asp:DropDownList ID="ddlCourse" runat="server" CssClass="form-control">
-                                <asp:ListItem Text="-- Select Course --" Value=""></asp:ListItem>
-                                <asp:ListItem Text="HTML Fundamentals" Value="HTML"></asp:ListItem>
-                                <asp:ListItem Text="CSS Basics" Value="CSS"></asp:ListItem>
-                                <asp:ListItem Text="JavaScript Introduction" Value="JavaScript"></asp:ListItem>
-                                <asp:ListItem Text="Python Programming" Value="Python"></asp:ListItem>
-                            </asp:DropDownList>
-                            <asp:RequiredFieldValidator ID="rfvCourse" runat="server"
-                                ControlToValidate="ddlCourse"
-                                InitialValue=""
-                                ErrorMessage="Course is required."
-                                ForeColor="Red">
-                            </asp:RequiredFieldValidator>
-                        </div>
+        <div class="main-content">
+            <div class="page-card">
 
-                        <div class="row">
-                            <div class="col-md-6">
-                                <label>Passing Score (%)</label>
-                                <asp:TextBox ID="txtPassingScore" runat="server" CssClass="form-control" Text="70"></asp:TextBox>
-                                <asp:RequiredFieldValidator ID="rfvPassingScore" runat="server"
-                                    ControlToValidate="txtPassingScore"
-                                    ErrorMessage="Passing score is required."
-                                    ForeColor="Red">
-                                </asp:RequiredFieldValidator>
-                                <asp:RegularExpressionValidator ID="revPassingScore" runat="server"
-                                    ControlToValidate="txtPassingScore"
-                                    ValidationExpression="^(100|[1-9]?[0-9])$"
-                                    ErrorMessage="Enter a score from 0 to 100."
-                                    ForeColor="Red">
-                                </asp:RegularExpressionValidator>
-                            </div>
+                <h2>Manage Quizzes</h2>
+                <p>Create and manage quiz questions for programming courses.</p>
 
-                            <div class="col-md-6">
-                                <label>Duration (Minutes)</label>
-                                <asp:TextBox ID="txtDuration" runat="server" CssClass="form-control" Text="20"></asp:TextBox>
-                                <asp:RequiredFieldValidator ID="rfvDuration" runat="server"
-                                    ControlToValidate="txtDuration"
-                                    ErrorMessage="Duration is required."
-                                    ForeColor="Red">
-                                </asp:RequiredFieldValidator>
-                                <asp:RegularExpressionValidator ID="revDuration" runat="server"
-                                    ControlToValidate="txtDuration"
-                                    ValidationExpression="^[1-9][0-9]*$"
-                                    ErrorMessage="Duration must be a positive number."
-                                    ForeColor="Red">
-                                </asp:RegularExpressionValidator>
-                            </div>
-                        </div>
+                <asp:Label ID="lblMessage" runat="server"></asp:Label>
+
+                <div class="section-box">
+                    <h3>Quiz Creation</h3>
+
+                    <div class="form-group">
+                        <label>Course</label>
+                        <asp:DropDownList ID="ddlCourse" runat="server" CssClass="form-control"></asp:DropDownList>
                     </div>
 
-                    <div class="section-box">
-                        <h3>Add New Quiz Question</h3>
-
-                        <div class="form-group">
-                            <label>Question</label>
-                            <asp:TextBox ID="txtQuestion" runat="server" CssClass="form-control"></asp:TextBox>
-                            <asp:RequiredFieldValidator ID="rfvQuestion" runat="server"
-                                ControlToValidate="txtQuestion"
-                                ErrorMessage="Question is required."
-                                ForeColor="Red">
-                            </asp:RequiredFieldValidator>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label>Passing Score (%)</label>
+                            <asp:TextBox ID="txtPassingScore" runat="server" CssClass="form-control" Text="70"></asp:TextBox>
                         </div>
 
-                        <div class="row">
-                            <div class="col-md-6 form-group">
-                                <label>Option A</label>
-                                <asp:TextBox ID="txtOptionA" runat="server" CssClass="form-control"></asp:TextBox>
-                                <asp:RequiredFieldValidator ID="rfvOptionA" runat="server"
-                                    ControlToValidate="txtOptionA"
-                                    ErrorMessage="Option A is required."
-                                    ForeColor="Red">
-                                </asp:RequiredFieldValidator>
-                            </div>
-
-                            <div class="col-md-6 form-group">
-                                <label>Option B</label>
-                                <asp:TextBox ID="txtOptionB" runat="server" CssClass="form-control"></asp:TextBox>
-                                <asp:RequiredFieldValidator ID="rfvOptionB" runat="server"
-                                    ControlToValidate="txtOptionB"
-                                    ErrorMessage="Option B is required."
-                                    ForeColor="Red">
-                                </asp:RequiredFieldValidator>
-                            </div>
-
-                            <div class="col-md-6 form-group">
-                                <label>Option C</label>
-                                <asp:TextBox ID="txtOptionC" runat="server" CssClass="form-control"></asp:TextBox>
-                                <asp:RequiredFieldValidator ID="rfvOptionC" runat="server"
-                                    ControlToValidate="txtOptionC"
-                                    ErrorMessage="Option C is required."
-                                    ForeColor="Red">
-                                </asp:RequiredFieldValidator>
-                            </div>
-
-                            <div class="col-md-6 form-group">
-                                <label>Option D</label>
-                                <asp:TextBox ID="txtOptionD" runat="server" CssClass="form-control"></asp:TextBox>
-                                <asp:RequiredFieldValidator ID="rfvOptionD" runat="server"
-                                    ControlToValidate="txtOptionD"
-                                    ErrorMessage="Option D is required."
-                                    ForeColor="Red">
-                                </asp:RequiredFieldValidator>
-                            </div>
+                        <div class="col-md-6">
+                            <label>Duration (Minutes)</label>
+                            <asp:TextBox ID="txtDuration" runat="server" CssClass="form-control" Text="20"></asp:TextBox>
                         </div>
-
-                        <div class="form-group">
-                            <label>Correct Answer</label>
-                            <asp:DropDownList ID="ddlCorrectAnswer" runat="server" CssClass="form-control">
-                                <asp:ListItem Text="-- Select Correct Answer --" Value=""></asp:ListItem>
-                                <asp:ListItem Text="Option A" Value="A"></asp:ListItem>
-                                <asp:ListItem Text="Option B" Value="B"></asp:ListItem>
-                                <asp:ListItem Text="Option C" Value="C"></asp:ListItem>
-                                <asp:ListItem Text="Option D" Value="D"></asp:ListItem>
-                            </asp:DropDownList>
-                            <asp:RequiredFieldValidator ID="rfvCorrectAnswer" runat="server"
-                                ControlToValidate="ddlCorrectAnswer"
-                                InitialValue=""
-                                ErrorMessage="Correct answer is required."
-                                ForeColor="Red">
-                            </asp:RequiredFieldValidator>
-                        </div>
-
-                        <asp:Button ID="btnSaveQuestion" runat="server" Text="Save Question" CssClass="btn btn-success"
-                            OnClientClick="return showPendingMessage('Save Question');" />
-
-                        <a href="Dashboard.aspx" class="btn btn-default">Back to Admin Dashboard</a>
                     </div>
-
-                    <div class="section-box">
-                        <h3>Existing Quiz Questions</h3>
-
-                        <table class="table table-bordered table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Course</th>
-                                    <th>Question</th>
-                                    <th>Correct Answer</th>
-                                    <th>Points</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>HTML Fundamentals</td>
-                                    <td>What does HTML stand for?</td>
-                                    <td>Option A</td>
-                                    <td>1</td>
-                                    <td>
-                                        <button type="button" class="btn btn-warning btn-sm" onclick="return showPendingMessage('Edit Question');">Edit</button>
-                                        <button type="button" class="btn btn-danger btn-sm" onclick="return showPendingMessage('Delete Question');">Delete</button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-
-                        <a href="../Quiz.aspx" class="btn btn-warning">Preview Quiz</a>
-                    </div>
-
                 </div>
+
+                <div class="section-box">
+                    <h3>Add New Quiz Question</h3>
+
+                    <div class="form-group">
+                        <label>Question</label>
+                        <asp:TextBox ID="txtQuestion" runat="server" CssClass="form-control"></asp:TextBox>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 form-group">
+                            <label>Option A</label>
+                            <asp:TextBox ID="txtOptionA" runat="server" CssClass="form-control"></asp:TextBox>
+                        </div>
+
+                        <div class="col-md-6 form-group">
+                            <label>Option B</label>
+                            <asp:TextBox ID="txtOptionB" runat="server" CssClass="form-control"></asp:TextBox>
+                        </div>
+
+                        <div class="col-md-6 form-group">
+                            <label>Option C</label>
+                            <asp:TextBox ID="txtOptionC" runat="server" CssClass="form-control"></asp:TextBox>
+                        </div>
+
+                        <div class="col-md-6 form-group">
+                            <label>Option D</label>
+                            <asp:TextBox ID="txtOptionD" runat="server" CssClass="form-control"></asp:TextBox>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Correct Answer</label>
+                        <asp:DropDownList ID="ddlCorrectAnswer" runat="server" CssClass="form-control">
+                            <asp:ListItem Text="-- Select Correct Answer --" Value=""></asp:ListItem>
+                            <asp:ListItem Text="Option A" Value="A"></asp:ListItem>
+                            <asp:ListItem Text="Option B" Value="B"></asp:ListItem>
+                            <asp:ListItem Text="Option C" Value="C"></asp:ListItem>
+                            <asp:ListItem Text="Option D" Value="D"></asp:ListItem>
+                        </asp:DropDownList>
+                    </div>
+
+                    <asp:Button ID="btnSaveQuestion" runat="server" Text="Save Question"
+                        CssClass="btn btn-success"
+                        OnClick="btnSaveQuestion_Click" />
+
+                    <a href="Dashboard.aspx" class="btn btn-default">Back to Admin Dashboard</a>
+                </div>
+
+                <div class="section-box">
+                    <h3>Existing Quiz Questions</h3>
+
+                    <asp:GridView ID="gvQuestions" runat="server"
+                        CssClass="table table-bordered table-striped"
+                        AutoGenerateColumns="False"
+                        DataKeyNames="QuestionID"
+                        OnRowDeleting="gvQuestions_RowDeleting">
+
+                        <Columns>
+                            <asp:BoundField DataField="CourseTitle" HeaderText="Course" />
+                            <asp:BoundField DataField="QuestionText" HeaderText="Question" />
+                            <asp:BoundField DataField="CorrectAnswer" HeaderText="Correct Answer" />
+                            <asp:BoundField DataField="Points" HeaderText="Points" />
+                            <asp:CommandField ShowDeleteButton="true" />
+                        </Columns>
+
+                    </asp:GridView>
+
+                    <a href="../Quiz.aspx" class="btn btn-warning">Preview Quiz</a>
+                </div>
+
             </div>
         </div>
-    </form>
+
+    </div>
+
+</form>
 </body>
 </html>
