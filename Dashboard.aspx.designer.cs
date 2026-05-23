@@ -11,7 +11,7 @@ namespace WAPPAssignment
 {
 
 
-    public partial class WebForm2
+    public partial class Dashboard
     {
 
         /// <summary>

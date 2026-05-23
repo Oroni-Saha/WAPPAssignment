@@ -60,9 +60,18 @@
                         <li><a runat="server" href="~/Contact">Contact</a></li>
                     </ul>
                     <ul class="nav navbar-nav navbar-right">
-                        <li><a runat="server" href="~/Login">Login</a></li>
-                        <li><a runat="server" href="~/Register" class="nav-btn">Register</a></li>
-                    </ul>
+                        <% if (Session["UserID"] == null) { %>
+                            <li><a runat="server" href="~/Login">Login</a></li>
+                            <li><a runat="server" href="~/Register" class="nav-btn">Register</a></li>
+                         <% } else { %>
+                                <li><a runat="server" href="~/Dashboard">Dashboard</a></li>
+                                <li>
+                                <asp:LinkButton ID="btnMasterLogout" runat="server" CssClass="nav-btn" OnClick="btnMasterLogout_Click">
+                                        Logout
+                                    </asp:LinkButton>
+                                </li>
+                             <%} %>
+                      </ul>
                 </div>
             </div>
         </div>

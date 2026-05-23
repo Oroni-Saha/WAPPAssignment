@@ -1,4 +1,4 @@
-<%@ Page Language="C#" AutoEventWireup="true" CodeFile="Quiz.aspx.cs" Inherits="WAPPAssignment.Quiz" %>
+﻿<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="Quiz.aspx.cs" Inherits="WAPPAssignment.Quiz" %>
 <!DOCTYPE html>
 <html>
 <head runat="server">
@@ -74,4 +74,3 @@
 </form>
 </body>
 </html>
-

@@ -34,7 +34,7 @@ namespace WAPPAssignment
                     }
                     else
                     {
-                        Response.Redirect("Courses.aspx");
+                        Response.Redirect("CourseCatalog.aspx");
                     }
                 }
                 else

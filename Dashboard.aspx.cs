@@ -5,7 +5,7 @@ using System.Data.SqlClient;
 
 namespace WAPPAssignment
 {
-    public partial class WebForm2 : System.Web.UI.Page
+    public partial class Dashboard : System.Web.UI.Page
     {
         protected void Page_Load(object sender, EventArgs e)
         {
@@ -66,4 +66,3 @@ namespace WAPPAssignment
     }
 }
 
-}
