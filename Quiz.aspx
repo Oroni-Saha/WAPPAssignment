@@ -43,31 +43,31 @@
             </div>
 
             <div class="question-box">
-                <h4>2. Which tag is used to create a paragraph?</h4>
-                <asp:RadioButtonList ID="q2" runat="server">
-                    <asp:ListItem Value="h1">&lt;h1&gt;</asp:ListItem>
-                    <asp:ListItem Value="p">&lt;p&gt;</asp:ListItem>
-                    <asp:ListItem Value="div">&lt;div&gt;</asp:ListItem>
-                </asp:RadioButtonList>
-                <asp:RequiredFieldValidator ID="rfvQ2" runat="server" ControlToValidate="q2"
-                    ErrorMessage="Please answer question 2." ForeColor="Red"></asp:RequiredFieldValidator>
-            </div>
+    <h4>2. Which tag is used to create a paragraph?</h4>
+    <asp:RadioButtonList ID="q2" runat="server">
+        <asp:ListItem Value="h1">&amp;lt;h1&amp;gt;</asp:ListItem>
+        <asp:ListItem Value="p">&amp;lt;p&amp;gt;</asp:ListItem>
+        <asp:ListItem Value="div">&amp;lt;div&amp;gt;</asp:ListItem>
+    </asp:RadioButtonList>
+    <asp:RequiredFieldValidator ID="rfvQ2" runat="server" ControlToValidate="q2"
+        ErrorMessage="Please answer question 2." ForeColor="Red"></asp:RequiredFieldValidator>
+</div>
 
-            <div class="question-box">
-                <h4>3. Which tag is used to insert an image?</h4>
-                <asp:RadioButtonList ID="q3" runat="server">
-                    <asp:ListItem Value="link">&lt;link&gt;</asp:ListItem>
-                    <asp:ListItem Value="src">&lt;src&gt;</asp:ListItem>
-                    <asp:ListItem Value="img">&lt;img&gt;</asp:ListItem>
-                </asp:RadioButtonList>
-                <asp:RequiredFieldValidator ID="rfvQ3" runat="server" ControlToValidate="q3"
-                    ErrorMessage="Please answer question 3." ForeColor="Red"></asp:RequiredFieldValidator>
-            </div>
+<div class="question-box">
+    <h4>3. Which tag is used to insert an image?</h4>
+    <asp:RadioButtonList ID="q3" runat="server">
+        <asp:ListItem Value="link">&amp;lt;link&amp;gt;</asp:ListItem>
+        <asp:ListItem Value="src">&amp;lt;src&amp;gt;</asp:ListItem>
+        <asp:ListItem Value="img">&amp;lt;img&amp;gt;</asp:ListItem>
+    </asp:RadioButtonList>
+    <asp:RequiredFieldValidator ID="rfvQ3" runat="server" ControlToValidate="q3"
+        ErrorMessage="Please answer question 3." ForeColor="Red"></asp:RequiredFieldValidator>
+</div>
         </section>
 
         <div style="margin-top:20px;">
             <asp:Button ID="btnSubmit" runat="server" Text="Submit Quiz" CssClass="btn btn-primary" OnClick="btnSubmit_Click" />
-            <a href="Courses.aspx" class="btn btn-default">Back to Courses</a>
+            <a href="CourseCatalog.aspx" class="btn btn-default">Back to Courses</a>
             <a href="Default.aspx" class="btn btn-default">Home</a>
         </div>
     </div>
